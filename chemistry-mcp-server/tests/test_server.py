@@ -201,7 +201,7 @@ class TestComputeDescriptors:
             ["CCO"],
             ["molecular_weight", "exact_molecular_weight", "logp", "tpsa",
              "h_bond_donors", "h_bond_acceptors", "rotatable_bonds",
-             "aromatic_rings", "total_rings", "heavy_atoms", "num_atoms",
+             "aromatic_rings", "total_rings", "heavy_atoms", "atom_count",
              "fraction_csp3", "heteroatoms", "kappa1", "kappa2", "kappa3"],
         ))
         assert len(result) == 1
@@ -276,8 +276,8 @@ class TestBalanceEquation:
         assert "balanced" in result
 
     def test_no_separator(self):
-        result = _json(balance_equation("H2 + O2 H2O"))
-        assert "error" in result
+        with pytest.raises(ValueError, match="Use '->' or '='"):
+            balance_equation("H2 + O2 H2O")
 
 
 # ════════════════════════════════════════════════════════════

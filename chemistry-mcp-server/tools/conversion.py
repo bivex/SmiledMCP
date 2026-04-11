@@ -19,10 +19,14 @@ def convert_format(smiles: str) -> str:
         JSON with canonical_smiles, inchi, inchikey
     """
     mol = mol_from_smiles(smiles)
+    canonical = Chem.MolToSmiles(mol)
+    inchi = Chem.MolToInchi(mol)
+    if inchi is None:
+        raise ValueError(f"Could not generate InChI for: {smiles}")
     result = {
         "input_smiles": smiles,
-        "canonical_smiles": Chem.MolToSmiles(mol),
-        "inchi": Chem.MolToInchi(mol),
+        "canonical_smiles": canonical,
+        "inchi": inchi,
         "inchikey": Chem.MolToInchiKey(mol),
     }
     return json.dumps(result, indent=2, ensure_ascii=False)
@@ -36,7 +40,7 @@ def inchi_to_smiles(inchi: str) -> str:
         inchi: InChI string
 
     Returns:
-        JSON with smiles, canonical_smiles, inchikey
+        JSON with smiles, inchikey
     """
     mol = Chem.MolFromInchi(inchi)
     if mol is None:

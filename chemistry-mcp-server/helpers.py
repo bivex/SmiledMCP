@@ -42,5 +42,20 @@ def compound_to_dict(c) -> dict:
     return d
 
 
+VALID_QUERY_TYPES = {"name", "smiles", "inchi", "inchikey", "formula", "cid"}
+
+
 def resolve_namespace(query_type: str) -> str:
+    if query_type not in VALID_QUERY_TYPES:
+        raise ValueError(
+            f"Invalid query_type: {query_type!r}. "
+            f"Must be one of: {sorted(VALID_QUERY_TYPES)}"
+        )
     return "cid" if query_type == "cid" else query_type
+
+
+def parse_cid(query: str) -> int:
+    try:
+        return int(query)
+    except (ValueError, TypeError):
+        raise ValueError(f"CID must be a number, got: {query!r}")

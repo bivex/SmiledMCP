@@ -6,7 +6,7 @@ import json
 import pubchempy as pcp
 
 from server import mcp
-from helpers import compound_to_dict, resolve_namespace
+from helpers import compound_to_dict, resolve_namespace, parse_cid
 
 
 @mcp.tool()
@@ -25,11 +25,12 @@ async def search_compound(
     Returns:
         JSON array of compound records with CID, SMILES, InChI, molecular weight, formula, etc.
     """
+    resolve_namespace(query_type)  # validate before async
     capped = max(1, min(max_results, 20))
 
     def _search():
         if query_type == "cid":
-            comp = pcp.Compound.from_cid(int(query))
+            comp = pcp.Compound.from_cid(parse_cid(query))
             return [compound_to_dict(comp)]
         else:
             comps = pcp.get_compounds(query, query_type, max_records=capped)
@@ -60,6 +61,9 @@ async def get_compound_properties(
     Returns:
         JSON array of property dictionaries
     """
+    ns = resolve_namespace(query_type)
+    ident = parse_cid(query) if query_type == "cid" else query
+
     def _get():
         if properties is None:
             props = [
@@ -72,8 +76,6 @@ async def get_compound_properties(
         else:
             props = properties
 
-        ns = resolve_namespace(query_type)
-        ident = int(query) if query_type == "cid" else query
         results = pcp.get_properties(props, ident, ns)
         return results if results else []
 
@@ -92,9 +94,10 @@ async def get_synonyms(query: str, query_type: str = "name") -> str:
     Returns:
         JSON list of synonym strings
     """
+    ns = resolve_namespace(query_type)
+    ident = parse_cid(query) if query_type == "cid" else query
+
     def _get():
-        ns = resolve_namespace(query_type)
-        ident = int(query) if query_type == "cid" else query
         results = pcp.get_synonyms(ident, ns)
         if results and len(results) > 0:
             return results[0].get("Synonym", [])[:50]

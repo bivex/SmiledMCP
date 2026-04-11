@@ -170,10 +170,13 @@ class TestResolveNamespace:
     def test_name(self):
         assert resolve_namespace("name") == "name"
 
-    def test_invalid_type_passthrough(self):
-        # resolve_namespace returns anything that isn't "cid" as-is —
-        # invalid types are passed through to pubchempy silently
-        assert resolve_namespace("garbage") == "garbage"
+    def test_invalid_type_raises(self):
+        with pytest.raises(ValueError, match="Invalid query_type"):
+            resolve_namespace("garbage")
+
+    def test_all_valid_types(self):
+        for qt in ("name", "smiles", "inchi", "inchikey", "formula", "cid"):
+            assert resolve_namespace(qt) is not None
 
 
 # ================================================================
@@ -201,9 +204,8 @@ class TestSearchCompoundBugs:
         assert len(result) <= 20
 
     def test_cid_non_numeric_raises(self):
-        """BUG: query_type='cid' with non-numeric query should raise ValueError,
-        but currently throws unhandled int() conversion error."""
-        with pytest.raises((ValueError, TypeError)):
+        """query_type='cid' with non-numeric query should raise clean ValueError."""
+        with pytest.raises(ValueError, match="CID must be a number"):
             _run(search_compound("not_a_number", "cid"))
 
     def test_search_returns_json_parseable(self):
@@ -230,8 +232,7 @@ class TestSearchCompoundBugs:
 @pytest.mark.skipif(not HAS_CHEMPY, reason="Needs network")
 class TestGetCompoundPropertiesBugs:
     def test_cid_non_numeric_raises(self):
-        """BUG: Same as search_compound — unhandled int() error for non-numeric CID."""
-        with pytest.raises((ValueError, TypeError)):
+        with pytest.raises(ValueError, match="CID must be a number"):
             _run(get_compound_properties("abc", "cid"))
 
     def test_nonexistent_compound_returns_empty(self):
@@ -251,8 +252,7 @@ class TestGetCompoundPropertiesBugs:
 @pytest.mark.skipif(not HAS_CHEMPY, reason="Needs network")
 class TestGetSynonymsBugs:
     def test_cid_non_numeric_raises(self):
-        """BUG: Same unhandled int() error."""
-        with pytest.raises((ValueError, TypeError)):
+        with pytest.raises(ValueError, match="CID must be a number"):
             _run(get_synonyms("abc", "cid"))
 
     def test_nonexistent_compound_returns_empty(self):
@@ -278,7 +278,7 @@ class TestMolecularInfoBugs:
             "exact_molecular_weight", "logp", "tpsa",
             "h_bond_donors", "h_bond_acceptors", "rotatable_bonds",
             "aromatic_rings", "aliphatic_rings", "total_rings",
-            "heavy_atoms", "num_atoms", "fraction_csp3",
+            "heavy_atoms", "atom_count", "fraction_csp3",
             "num_valence_electrons", "num_radical_electrons",
             "heteroatoms", "amide_bonds", "lipinski_rule_of_5",
         ]
@@ -298,7 +298,7 @@ class TestMolecularInfoBugs:
         info = _json(molecular_info("C"))
         assert info["molecular_formula"] == "CH4"
         assert info["heavy_atoms"] == 1
-        assert info["num_atoms"] == 1  # only explicit heavy atoms in graph (implicit H not counted)
+        assert info["atom_count"] == 1  # only explicit heavy atoms in graph (implicit H not counted)
         assert info["total_rings"] == 0
         assert info["rotatable_bonds"] == 0
 
@@ -323,7 +323,7 @@ class TestMolecularInfoBugs:
         info = _json(molecular_info("CCO"))
         # C-C-O = 3 heavy atoms, implicit H not counted
         assert info["heavy_atoms"] == 3
-        assert info["num_atoms"] == 3  # only explicit atoms in graph
+        assert info["atom_count"] == 3  # only explicit atoms in graph
 
     def test_molecular_weight_positive(self):
         info = _json(molecular_info("CCO"))
@@ -416,17 +416,13 @@ class TestConvertFormatBugs:
 
 
 class TestInchiToSmilesBugs:
-    def test_docstring_promises_canonical_smiles_but_missing(self):
-        """BUG: Docstring says 'JSON with smiles, canonical_smiles, inchikey'
-        but the result dict only has 'inchi', 'smiles', 'inchikey' —
-        no 'canonical_smiles' key."""
+    def test_output_keys(self):
         r1 = _json(convert_format("CCO"))
         inchi = r1["inchi"]
         r2 = _json(inchi_to_smiles(inchi))
-        # The docstring says canonical_smiles should be there
         assert "smiles" in r2
-        # BUG: this key is missing despite docstring promising it
-        # assert "canonical_smiles" in r2
+        assert "inchi" in r2
+        assert "inchikey" in r2
 
     def test_inchi_with_extra_whitespace(self):
         """InChI with leading/trailing spaces."""
@@ -448,15 +444,14 @@ class TestInchiToSmilesBugs:
 class TestBalanceEquationBugs:
     @pytest.mark.skipif(not HAS_CHEMPY, reason="chempy not installed")
     def test_empty_string(self):
-        result = _json(balance_equation(""))
-        assert "error" in result
+        with pytest.raises(ValueError, match="Empty equation"):
+            balance_equation("")
 
     @pytest.mark.skipif(not HAS_CHEMPY, reason="chempy not installed")
     def test_only_separator(self):
         """Just '->' with no substances on either side."""
-        result = _json(balance_equation("->"))
-        # chempy may raise or return empty
-        assert "error" in result or "balanced" in result
+        with pytest.raises(ValueError, match="substances on both sides"):
+            balance_equation("->")
 
     @pytest.mark.skipif(not HAS_CHEMPY, reason="chempy not installed")
     def test_whitespace_around_substances(self):
@@ -467,22 +462,21 @@ class TestBalanceEquationBugs:
 
     @pytest.mark.skipif(not HAS_CHEMPY, reason="chempy not installed")
     def test_single_substance_each_side(self):
-        """Same substance on both sides — chempy treats this as 'no reaction' (error)."""
-        result = _json(balance_equation("H2 -> H2"))
-        assert "error" in result  # chempy rejects substances appearing on both sides
+        """Same substance on both sides — chempy rejects this."""
+        with pytest.raises(ValueError, match="Failed to balance"):
+            balance_equation("H2 -> H2")
 
     @pytest.mark.skipif(not HAS_CHEMPY, reason="chempy not installed")
     def test_impossible_equation(self):
         """Equation that can't be balanced (mass not conserved)."""
-        result = _json(balance_equation("H2 -> O2"))
-        assert "error" in result
+        with pytest.raises(ValueError, match="Failed to balance"):
+            balance_equation("H2 -> O2")
 
     @pytest.mark.skipif(not HAS_CHEMPY, reason="chempy not installed")
     def test_duplicate_substances(self):
         """Same substance on both sides."""
-        result = _json(balance_equation("H2 + O2 -> H2O + H2"))
-        # This should either balance or error gracefully
-        assert "balanced" in result or "error" in result
+        with pytest.raises(ValueError):
+            balance_equation("H2 + O2 -> H2O + H2")
 
     @pytest.mark.skipif(not HAS_CHEMPY, reason="chempy not installed")
     def test_complex_equation(self):
@@ -518,8 +512,8 @@ class TestBalanceEquationBugs:
     @pytest.mark.skipif(not HAS_CHEMPY, reason="chempy not installed")
     def test_nonexistent_substance(self):
         """Substances that aren't real chemical formulas."""
-        result = _json(balance_equation("XYZ + ABC -> DEF"))
-        assert "error" in result
+        with pytest.raises(ValueError, match="Failed to balance"):
+            balance_equation("XYZ + ABC -> DEF")
 
 
 # ================================================================
@@ -913,9 +907,7 @@ class TestErrorHandlingConsistency:
             generate_3d_structure("GARBAGE")
 
     @pytest.mark.skipif(not HAS_CHEMPY, reason="chempy not installed")
-    def test_balance_returns_error_json_not_exception(self):
-        """balance_equation returns JSON error instead of raising —
-        this is inconsistent with other tools that raise ValueError."""
-        result = _json(balance_equation("H2 + O2 H2O"))
-        assert "error" in result
-        # Note: This is a design inconsistency — most tools raise, this one returns error JSON
+    def test_balance_raises_valueerror(self):
+        """balance_equation now raises ValueError consistently with other tools."""
+        with pytest.raises(ValueError):
+            balance_equation("H2 + O2 H2O")
