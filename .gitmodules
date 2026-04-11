@@ -1,0 +1,9 @@
+[submodule "PubChem-MCP-Server"]
+	path = PubChem-MCP-Server
+	url = https://github.com/JackKuo666/PubChem-MCP-Server.git
+[submodule "PubChempy_MCPserver"]
+	path = PubChempy_MCPserver
+	url = https://github.com/thinktraveller/PubChempy_MCPserver.git
+[submodule "rdkit-mcp-server"]
+	path = rdkit-mcp-server
+	url = https://github.com/tandemai-inc/rdkit-mcp-server.git
