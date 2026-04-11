@@ -7,3 +7,12 @@
 [submodule "rdkit-mcp-server"]
 	path = rdkit-mcp-server
 	url = https://github.com/tandemai-inc/rdkit-mcp-server.git
+[submodule "chembl_webresource_client"]
+	path = chembl_webresource_client
+	url = https://github.com/chembl/chembl_webresource_client.git
+[submodule "uniprot"]
+	path = uniprot
+	url = https://github.com/boscoh/uniprot.git
+[submodule "KEGGRESTpy"]
+	path = KEGGRESTpy
+	url = https://github.com/guokai8/KEGGRESTpy.git
