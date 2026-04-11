@@ -4,8 +4,10 @@ from rdkit import Chem
 
 
 def mol_from_smiles(smiles: str) -> Chem.Mol:
+    if not smiles or not smiles.strip():
+        raise ValueError(f"Invalid SMILES: {smiles!r} (empty)")
     mol = Chem.MolFromSmiles(smiles)
-    if mol is None:
+    if mol is None or mol.GetNumAtoms() == 0:
         raise ValueError(f"Invalid SMILES: {smiles}")
     return mol
 

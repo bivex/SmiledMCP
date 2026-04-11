@@ -112,6 +112,7 @@ def fragment_molecule(smiles: str, max_cuts: int = 3) -> str:
     from rdkit.Chem import rdMMPA
 
     mol = mol_from_smiles(smiles)
+    max_cuts = max(1, min(max_cuts, 5))
     fragments = rdMMPA.FragmentMol(mol, maxCuts=max_cuts)
 
     frags = []
