@@ -7,27 +7,22 @@ import asyncio
 
 import pytest
 
-# Make sure server.py is importable
+# Make sure chemistry-mcp-server root is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from server import (
-    search_compound,
-    get_compound_properties,
-    get_synonyms,
-    molecular_info,
-    compute_descriptors,
-    convert_format,
-    inchi_to_smiles,
-    balance_equation,
+from helpers import mol_from_smiles
+
+from tools.pubchem import search_compound, get_compound_properties, get_synonyms
+from tools.properties import molecular_info, compute_descriptors
+from tools.conversion import convert_format, inchi_to_smiles
+from tools.equations import balance_equation
+from tools.structure import (
     check_substructure,
     calculate_similarity,
     get_scaffold,
     fragment_molecule,
-    draw_molecule,
-    draw_molecule_grid,
-    generate_3d_structure,
-    _mol_from_smiles,
 )
+from tools.visualization import draw_molecule, draw_molecule_grid, generate_3d_structure
 
 
 def _json(result: str) -> dict | list:
@@ -41,13 +36,13 @@ def _json(result: str) -> dict | list:
 
 class TestHelpers:
     def test_mol_from_smiles_valid(self):
-        mol = _mol_from_smiles("CCO")
+        mol = mol_from_smiles("CCO")
         assert mol is not None
         assert mol.GetNumHeavyAtoms() == 3
 
     def test_mol_from_smiles_invalid(self):
         with pytest.raises(ValueError, match="Invalid SMILES"):
-            _mol_from_smiles("not_a_molecule_XYZZZ")
+            mol_from_smiles("not_a_molecule_XYZZZ")
 
 
 # ════════════════════════════════════════════════════════════
@@ -120,7 +115,6 @@ class TestGetSynonyms:
         result = _json(asyncio.run(get_synonyms("aspirin", "name")))
         assert isinstance(result, list)
         assert len(result) > 0
-        # Aspirin should have many synonyms
         assert any("aspirin" in s.lower() for s in result)
 
     def test_synonyms_by_cid(self):
@@ -152,7 +146,6 @@ class TestMolecularInfo:
         assert info["lipinski_rule_of_5"]["passes"] is True
 
     def test_large_molecule_lipinski_fail(self):
-        # A large molecule that likely fails Lipinski
         info = _json(molecular_info("C1CCCCC1C(CCCCCCCCCCCC)CCCCCCCCCCCCCCCCCCCCCCCC"))
         lipinski = info["lipinski_rule_of_5"]
         assert lipinski["violations"] > 0
@@ -201,7 +194,7 @@ class TestComputeDescriptors:
     def test_max_50_molecules(self):
         smiles = ["CCO"] * 55
         result = _json(compute_descriptors(smiles, ["molecular_weight"]))
-        assert len(result) == 50  # capped
+        assert len(result) == 50
 
     def test_all_descriptor_types(self):
         result = _json(compute_descriptors(
@@ -225,10 +218,9 @@ class TestConvertFormat:
         result = _json(convert_format("CCO"))
         assert result["canonical_smiles"] == "CCO"
         assert result["inchi"].startswith("InChI=1S/")
-        assert len(result["inchikey"]) == 27  # InChIKey format: XXXXXXXXXXXXXX-XXXXXXXXXX-X
+        assert len(result["inchikey"]) == 27
 
     def test_canonicalization(self):
-        # Different SMILES for the same molecule should give same canonical form
         r1 = _json(convert_format("C(C)O"))
         r2 = _json(convert_format("OCC"))
         r3 = _json(convert_format("CCO"))
@@ -244,7 +236,6 @@ class TestConvertFormat:
 
 class TestInchiToSmiles:
     def test_roundtrip(self):
-        # SMILES -> InChI -> SMILES should give the same molecule
         r1 = _json(convert_format("CCO"))
         inchi = r1["inchi"]
         r2 = _json(inchi_to_smiles(inchi))
@@ -316,7 +307,6 @@ class TestCheckSubstructure:
             check_substructure("CCO", "not_valid_smarts%%%")
 
     def test_multiple_matches(self):
-        # Two hydroxyl groups in ethylene glycol
         result = _json(check_substructure("OCCO", "[OX2H]"))
         assert result["match_count"] == 2
 
@@ -350,12 +340,10 @@ class TestGetScaffold:
         result = _json(get_scaffold("CC(=O)Oc1ccccc1C(=O)O", generic=True))
         assert "scaffold" in result
         assert "generic_scaffold" in result
-        # Generic scaffold should only contain carbon atoms
         gen = result["generic_scaffold"]
         assert "C" in gen
 
     def test_no_scaffold(self):
-        # Simple acyclic molecule — scaffold should be empty or minimal
         result = _json(get_scaffold("CCO"))
         assert "scaffold" in result
 
@@ -369,7 +357,6 @@ class TestFragmentMolecule:
     def test_max_cuts_param(self):
         r1 = _json(fragment_molecule("c1ccc(CC(=O)O)cc1", max_cuts=1))
         r3 = _json(fragment_molecule("c1ccc(CC(=O)O)cc1", max_cuts=3))
-        # More cuts should generally give more fragments
         assert r3["fragment_count"] >= r1["fragment_count"]
 
 
@@ -382,7 +369,6 @@ class TestDrawMolecule:
         result = _json(draw_molecule("CCO"))
         assert result["format"] == "png"
         assert len(result["data"]) > 0
-        # Valid base64 should decode without error
         import base64
         decoded = base64.b64decode(result["data"])
         assert decoded[:4] == b"\x89PNG"
@@ -426,7 +412,6 @@ class TestDrawMoleculeGrid:
     def test_grid_invalid_smiles_skipped(self):
         result = _json(draw_molecule_grid(["CCO", "INVALID_XYZ", "c1ccccc1"]))
         assert result["format"] == "png"
-        # Should still produce image with valid molecules
 
     def test_grid_all_invalid(self):
         with pytest.raises(ValueError, match="No valid molecules"):
@@ -439,7 +424,6 @@ class TestGenerate3DStructure:
         assert result["conformer_count"] == 1
         assert len(result["conformers"]) == 1
         assert "sdf" in result["conformers"][0]
-        # SDF should contain 3D coordinates
         assert "V2000" in result["conformers"][0]["sdf"]
 
     def test_multiple_conformers(self):
