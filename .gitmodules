@@ -16,3 +16,6 @@
 [submodule "KEGGRESTpy"]
 	path = KEGGRESTpy
 	url = https://github.com/guokai8/KEGGRESTpy.git
+[submodule "mcp-clinical-evidence"]
+	path = mcp-clinical-evidence
+	url = https://github.com/alexandriashai/mcp-clinical-evidence

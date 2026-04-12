@@ -9,3 +9,4 @@ from tools.visualization import *  # noqa: F401, F403
 from tools.chembl import *  # noqa: F401, F403
 from tools.uniprot import *  # noqa: F401, F403
 from tools.kegg import *  # noqa: F401, F403
+from tools.clinical_evidence import *  # noqa: F401, F403
