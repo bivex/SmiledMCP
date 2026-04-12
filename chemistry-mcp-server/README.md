@@ -1,39 +1,63 @@
-# Chemistry & Biology MCP Server
+<h1 align="center">Chemistry & Biology MCP Server</h1>
 
-Unified MCP server for chemistry and biology tasks — PubChem/ChEMBL search, molecular analysis, protein data, metabolic pathways, equation balancing, format conversion, structure analysis, and visualization in one server.
+<p align="center">
+  <strong>27 tools. One server. Every chemistry & biology task your AI assistant needs.</strong>
+</p>
 
-Built by combining the best parts of [PubChem-MCP-Server](https://github.com/JackKuo666/PubChem-MCP-Server), [rdkit-mcp-server](https://github.com/tandemai-inc/rdkit-mcp-server), and [PubChempy_MCPserver](https://github.com/thinktraveller/PubChempy_MCPserver), plus **ChEMBL**, **UniProt**, and **KEGG** integration — 27 tools in one server.
+<p align="center">
+  Search PubChem & ChEMBL. Analyze molecules. Pull protein data. Walk metabolic pathways.<br>
+  Balance equations. Generate 3D structures. All from your AI chat.
+</p>
 
-## Stack
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/tools-27-green" alt="27 Tools">
+  <img src="https://img.shields.io/badge/tests-191%20passing-brightgreen" alt="191 Tests">
+  <img src="https://img.shields.io/badge/license-MIT-yellow" alt="MIT License">
+</p>
 
-| Library | Purpose |
-|---------|---------|
-| `mcp` (FastMCP) | MCP server SDK |
-| `rdkit` | Molecules, SMILES, descriptors, 2D/3D, drawing |
-| `pubchempy` | PubChem REST API — search, properties, synonyms |
-| `httpx` | ChEMBL, UniProt, KEGG REST APIs |
-| `chempy` | Equation balancing, stoichiometry |
-| `pillow` | Image generation |
+---
 
-## Installation
+## What It Does
+
+This is a unified [MCP server](https://modelcontextprotocol.io) that gives AI assistants like Claude, Cursor, and Windsurf direct access to chemistry and biology tools. Instead of copying data between websites and your AI, the AI calls these tools natively.
+
+**Drug discovery** — Search ChEMBL for bioactivity data. Find protein targets. Check drug indications.
+
+**Molecular analysis** — Compute descriptors. Check Lipinski's Rule of 5. Compare structures with Tanimoto similarity. Extract Murcko scaffolds.
+
+**Chemical search** — Look up any compound on PubChem by name, SMILES, InChI, formula, or CID. Get properties and synonyms.
+
+**Equations** — Balance any chemical equation instantly.
+
+**Proteins** — Search UniProt. Get sequences, functions, subcellular locations. Map IDs across databases.
+
+**Pathways** — Browse KEGG pathways. Find compounds in glycolysis. Link genes to reactions.
+
+**Visualization** — Draw 2D structures. Generate 3D conformers. Export as PNG or SVG.
+
+---
+
+## Quick Start
 
 ```bash
 pip install mcp[cli] rdkit pubchempy chempy pillow httpx
 ```
 
-## Running
-
 ```bash
 python server.py
 ```
 
-The server runs on **stdio** transport by default.
+That's it. The server starts on **stdio** transport by default.
 
-## MCP Client Configuration
+---
+
+## Connect to Your AI
 
 ### Claude Desktop
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
@@ -46,7 +70,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 }
 ```
 
-### Claude Code (global)
+### Claude Code
 
 ```bash
 claude mcp add --transport stdio --scope user chemistry -- python3 /absolute/path/to/chemistry-mcp-server/server.py
@@ -65,263 +89,166 @@ claude mcp add --transport stdio --scope user chemistry -- python3 /absolute/pat
 }
 ```
 
-## Tools (27)
+---
 
-### 1. PubChem Search
+## All 27 Tools
 
-#### `search_compound`
-Search PubChem by name, SMILES, InChI, InChIKey, formula, or CID.
+### PubChem — Compound Search
 
-```
-query: "aspirin"  |  query_type: "name"|"smiles"|"inchi"|"inchikey"|"formula"|"cid"  |  max_results: 1-20
-```
+| Tool | What it does |
+|------|-------------|
+| `search_compound` | Search PubChem by name, SMILES, InChI, InChIKey, formula, or CID |
+| `get_compound_properties` | Get specific properties — molecular weight, LogP, TPSA, and more |
+| `get_synonyms` | Get all alternative names for a compound |
 
-#### `get_compound_properties`
-Get specific properties from PubChem API.
-
-```
-query: "aspirin"  |  query_type: "name"  |  properties: ["MolecularWeight", "XLogP", "TPSA"]
-```
-
-#### `get_synonyms`
-Get alternative names for a compound.
-
-```
-query: "aspirin"  |  query_type: "name"
-```
-
-### 2. Molecular Properties (RDKit)
-
-#### `molecular_info`
-Comprehensive molecular analysis from a SMILES string.
-
-```
-smiles: "CC(=O)Oc1ccccc1C(=O)O"
-```
-
-Returns: molecular weight, formula, LogP, TPSA, H-bond donors/acceptors, rotatable bonds, ring counts, fraction CSP3, and **Lipinski Rule of 5** check.
-
-#### `compute_descriptors`
-Compute named descriptors for multiple molecules in batch.
-
-```
-smiles_list: ["CCO", "c1ccccc1"]  |  descriptor_names: ["molecular_weight", "logp", "tpsa"]
-```
-
-28 available descriptors: `molecular_weight`, `logp`, `tpsa`, `h_bond_donors`, `h_bond_acceptors`, `rotatable_bonds`, `aromatic_rings`, `kappa1-3`, `chi0v-chi4v`, etc.
-
-### 3. Format Conversion
-
-#### `convert_format`
-SMILES to canonical SMILES, InChI, and InChIKey.
-
-```
-smiles: "CCO"
-```
-
-#### `inchi_to_smiles`
-InChI to SMILES.
-
-```
-inchi: "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3"
-```
-
-### 4. Equation Balancing
-
-#### `balance_equation`
-Balance chemical equations via chempy.
-
-```
-equation: "H2 + O2 -> H2O"
-equation: "CH4 + O2 -> CO2 + H2O"
-```
-
-### 5. Structure Analysis
-
-#### `check_substructure`
-Check if a molecule contains a SMARTS pattern.
-
-```
-smiles: "CCO"  |  smarts: "[OX2H]"
-```
-
-#### `calculate_similarity`
-Tanimoto similarity between two molecules (Morgan fingerprints).
-
-```
-smiles1: "CCO"  |  smiles2: "CCCO"  |  radius: 2  |  n_bits: 2048
-```
-
-#### `get_scaffold`
-Extract Murcko scaffold.
-
-```
-smiles: "CC(=O)Oc1ccccc1C(=O)O"  |  generic: false
-```
-
-#### `fragment_molecule`
-Fragment molecule for Matched Molecular Pair Analysis (MMPA).
-
-```
-smiles: "c1ccc(CC(=O)O)cc1"  |  max_cuts: 3
-```
-
-### 6. Visualization & 3D
-
-#### `draw_molecule`
-Draw 2D structure, returns base64-encoded PNG or SVG.
-
-```
-smiles: "c1ccccc1"  |  width: 400  |  height: 400  |  image_format: "png"|"svg"
-```
-
-#### `draw_molecule_grid`
-Draw a grid of molecules, returns base64-encoded image.
-
-```
-smiles_list: ["CCO", "c1ccccc1", "CC(=O)O"]  |  legends: ["Ethanol", "Benzene", "Acetic acid"]
-```
-
-#### `generate_3d_structure`
-Generate 3D conformers (ETKDGv3 + MMFF optimization).
-
-```
-smiles: "CCO"  |  num_conformers: 5  |  random_seed: 42
-```
-
-### 7. ChEMBL — Bioactivity & Drug Data
-
-#### `chembl_search_molecule`
-Search ChEMBL for molecules by name, SMILES, substructure, or similarity.
-
-```
-query: "aspirin"  |  search_type: "name"|"substructure"|"similarity"|"chembl_id"  |  max_results: 10
-```
-
-Returns: ChEMBL ID, name, SMILES, max phase, molecular properties.
-
-#### `chembl_get_bioactivity`
-Get bioactivity data (IC50, Ki, EC50, etc.) for a molecule.
-
-```
-chembl_id: "CHEMBL25"  |  target_chembl_id: optional  |  activity_type: "IC50"  |  max_results: 20
-```
-
-Returns: activity values, target info, assay descriptions, pChEMBL values.
-
-#### `chembl_search_target`
-Search ChEMBL for biological targets (proteins, organisms).
-
-```
-query: "EGFR"  |  target_type: optional  |  max_results: 10
-```
-
-#### `chembl_get_drug_indications`
-Get approved disease indications for a drug.
-
-```
-chembl_id: "CHEMBL25"  |  max_results: 20
-```
-
-### 8. UniProt — Protein Data
-
-#### `uniprot_search`
-Search UniProt for proteins by name, gene, or keyword.
-
-```
-query: "EGFR"  |  organism: "human"  |  reviewed: true  |  max_results: 10
-```
-
-Returns: accession, protein name, gene name, organism, sequence length.
-
-#### `uniprot_get_protein`
-Get detailed protein information by accession ID.
-
-```
-accession: "P00533"
-```
-
-Returns: full sequence, function description, catalytic activity, subcellular locations, GO terms, cross-references (PDB, KEGG, ChEMBL, DrugBank).
-
-#### `uniprot_map_ids`
-Map protein identifiers between databases.
-
-```
-ids: ["P00533", "P04626"]  |  from_type: "UniProtKB_AC-ID"  |  to_type: "GeneID"
-```
-
-Supported: UniProtKB, GeneID, Ensembl, PDB, KEGGG, ChEMBL, DrugBank, RefSeq, and 100+ more.
-
-### 9. KEGG — Pathways & Metabolism
-
-#### `kegg_search`
-Search KEGG databases for entries.
-
-```
-database: "compound"|"pathway"|"drug"|"disease"|"enzyme"  |  query: "glucose"  |  max_results: 20
-```
-
-#### `kegg_get_entry`
-Get detailed information about a KEGG entry.
-
-```
-entry_id: "cpd:C00031"  |  "path:hsa00010"  |  "hsa:10458"  |  "D00075"
-```
-
-#### `kegg_list`
-List entries in a KEGG database.
-
-```
-database: "pathway"  |  organism: "hsa"
-```
-
-#### `kegg_link`
-Find cross-references between KEGG entries.
-
-```
-target_db: "pathway"  |  source_id: "hsa:10458"
-```
-
-#### `kegg_pathway_compounds`
-Get all compounds involved in a KEGG pathway.
-
-```
-pathway_id: "hsa00010"
-```
-
-## Examples
-
-```
-> Search for aspirin on PubChem
+```python
 search_compound(query="aspirin", query_type="name")
+get_compound_properties(query="aspirin", properties=["MolecularWeight", "XLogP", "TPSA"])
+get_synonyms(query="aspirin")
+```
 
-> Get molecular properties of ethanol
-molecular_info(smiles="CCO")
+### RDKit — Molecular Properties
 
-> Balance combustion of methane
+| Tool | What it does |
+|------|-------------|
+| `molecular_info` | Full molecular profile — weight, formula, LogP, TPSA, H-bonds, Lipinski Rule of 5 |
+| `compute_descriptors` | Batch-compute named descriptors across multiple molecules |
+
+```python
+molecular_info(smiles="CC(=O)Oc1ccccc1C(=O)O")
+compute_descriptors(smiles_list=["CCO", "c1ccccc1"], descriptor_names=["molecular_weight", "logp", "tpsa"])
+```
+
+28 available descriptors: `molecular_weight`, `logp`, `tpsa`, `h_bond_donors`, `h_bond_acceptors`, `rotatable_bonds`, `aromatic_rings`, `kappa1-3`, `chi0v-chi4v`, and more.
+
+### Format Conversion
+
+| Tool | What it does |
+|------|-------------|
+| `convert_format` | SMILES → canonical SMILES, InChI, InChIKey |
+| `inchi_to_smiles` | InChI → SMILES |
+
+```python
+convert_format(smiles="CCO")
+inchi_to_smiles(inchi="InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3")
+```
+
+### Equation Balancing
+
+| Tool | What it does |
+|------|-------------|
+| `balance_equation` | Balance any chemical equation |
+
+```python
+balance_equation(equation="H2 + O2 -> H2O")
 balance_equation(equation="CH4 + O2 -> CO2 + H2O")
+```
 
-> Find drugs targeting EGFR on ChEMBL
-chembl_get_bioactivity(chembl_id="CHEMBL25", target_chembl_id="CHEMBL203")
+### Structure Analysis
 
-> Get human EGFR protein details
-uniprot_get_protein(accession="P00533")
+| Tool | What it does |
+|------|-------------|
+| `check_substructure` | Check if a molecule matches a SMARTS pattern |
+| `calculate_similarity` | Tanimoto similarity between two molecules (Morgan fingerprints) |
+| `get_scaffold` | Extract Murcko scaffold from a molecule |
+| `fragment_molecule` | Fragment for Matched Molecular Pair Analysis (MMPA) |
 
-> Find glucose in KEGG
-kegg_search(database="compound", query="glucose")
+```python
+check_substructure(smiles="CCO", smarts="[OX2H]")
+calculate_similarity(smiles1="CCO", smiles2="CCCO")
+get_scaffold(smiles="CC(=O)Oc1ccccc1C(=O)O")
+fragment_molecule(smiles="c1ccc(CC(=O)O)cc1", max_cuts=3)
+```
 
-> Get all compounds in glycolysis pathway
-kegg_pathway_compounds(pathway_id="hsa00010")
+### Visualization & 3D
 
-> Map UniProt IDs to GeneIDs
-uniprot_map_ids(ids=["P00533", "P04626"], from_type="UniProtKB_AC-ID", to_type="GeneID")
+| Tool | What it does |
+|------|-------------|
+| `draw_molecule` | Draw a 2D structure — returns PNG or SVG |
+| `draw_molecule_grid` | Draw multiple molecules side-by-side |
+| `generate_3d_structure` | Generate 3D conformers (ETKDGv3 + MMFF optimization) |
 
-> Draw a molecule
-draw_molecule(smiles="CC(=O)Oc1ccccc1C(=O)O")
-
-> Generate 3D structure
+```python
+draw_molecule(smiles="c1ccccc1", image_format="png")
+draw_molecule_grid(smiles_list=["CCO", "c1ccccc1"], legends=["Ethanol", "Benzene"])
 generate_3d_structure(smiles="CCCCCC", num_conformers=5)
 ```
+
+### ChEMBL — Bioactivity & Drug Data
+
+| Tool | What it does |
+|------|-------------|
+| `chembl_search_molecule` | Search molecules by name, SMILES, substructure, or similarity |
+| `chembl_get_bioactivity` | Get IC50, Ki, EC50 data for a molecule against targets |
+| `chembl_search_target` | Search for biological targets — proteins, organisms |
+| `chembl_get_drug_indications` | Get approved disease indications for a drug |
+
+```python
+chembl_search_molecule(query="aspirin", search_type="name")
+chembl_get_bioactivity(chembl_id="CHEMBL25", activity_type="IC50")
+chembl_search_target(query="EGFR")
+chembl_get_drug_indications(chembl_id="CHEMBL25")
+```
+
+### UniProt — Protein Data
+
+| Tool | What it does |
+|------|-------------|
+| `uniprot_search` | Search proteins by name, gene, or keyword |
+| `uniprot_get_protein` | Get full details — sequence, function, locations, cross-references |
+| `uniprot_map_ids` | Map identifiers across 100+ databases (GeneID, Ensembl, PDB, KEGG, ...) |
+
+```python
+uniprot_search(query="EGFR", organism="human")
+uniprot_get_protein(accession="P00533")
+uniprot_map_ids(ids=["P00533", "P04626"], from_type="UniProtKB_AC-ID", to_type="GeneID")
+```
+
+### KEGG — Pathways & Metabolism
+
+| Tool | What it does |
+|------|-------------|
+| `kegg_search` | Search KEGG databases — compounds, pathways, drugs, diseases, enzymes |
+| `kegg_get_entry` | Get full details for any KEGG entry |
+| `kegg_list` | List all entries in a KEGG database |
+| `kegg_link` | Find cross-references between KEGG entries |
+| `kegg_pathway_compounds` | Get all compounds in a metabolic pathway |
+
+```python
+kegg_search(database="compound", query="glucose")
+kegg_get_entry(entry_id="cpd:C00031")
+kegg_list(database="pathway", organism="hsa")
+kegg_link(target_db="pathway", source_id="hsa:10458")
+kegg_pathway_compounds(pathway_id="hsa00010")
+```
+
+---
+
+## Real-World Examples
+
+Ask your AI assistant something like:
+
+> "Find all drugs approved for hypertension and show me their molecular properties"
+
+Behind the scenes, it chains `chembl_search_molecule` → `chembl_get_drug_indications` → `molecular_info`.
+
+> "What compounds are involved in human glycolysis?"
+
+Calls `kegg_pathway_compounds` for `hsa00010`.
+
+> "Compare the Tanimoto similarity between aspirin and ibuprofen"
+
+Calls `search_compound` for both → `calculate_similarity` on the SMILES.
+
+> "Balance the combustion of octane"
+
+Calls `balance_equation("C8H18 + O2 -> CO2 + H2O")`.
+
+> "Get the full sequence and function of human EGFR"
+
+Calls `uniprot_get_protein(accession="P00533")`.
+
+---
 
 ## Project Structure
 
@@ -347,6 +274,8 @@ chemistry-mcp-server/
 └── README.md
 ```
 
+---
+
 ## Testing
 
 ```bash
@@ -354,18 +283,33 @@ pip install pytest
 python3 -m pytest tests/ -v
 ```
 
-191 tests covering all tools including live PubChem, ChEMBL, UniProt, and KEGG API calls.
+191 tests covering every tool — including live API calls to PubChem, ChEMBL, UniProt, and KEGG.
 
-## Reference Servers
+---
 
-| Repository | Used for |
-|-----------|----------|
-| [PubChem-MCP-Server](https://github.com/JackKuo666/PubChem-MCP-Server) | PubChem search patterns |
-| [rdkit-mcp-server](https://github.com/tandemai-inc/rdkit-mcp-server) | RDKit descriptor & drawing patterns |
-| [PubChempy_MCPserver](https://github.com/thinktraveller/PubChempy_MCPserver) | PubChem + chempy patterns |
-| [chembl_webresource_client](https://github.com/chembl/chembl_webresource_client) | ChEMBL API reference |
-| [uniprot](https://github.com/boscoh/uniprot) | UniProt API reference |
-| [KEGGRESTpy](https://github.com/guokai8/KEGGRESTpy) | KEGG API reference |
+## Tech Stack
+
+| Library | Role |
+|---------|------|
+| `mcp` (FastMCP) | MCP server SDK |
+| `rdkit` | Molecules, SMILES, descriptors, 2D/3D, drawing |
+| `pubchempy` | PubChem REST API — search, properties, synonyms |
+| `httpx` | ChEMBL, UniProt, KEGG REST APIs |
+| `chempy` | Equation balancing and stoichiometry |
+| `pillow` | Image generation |
+
+---
+
+## Credits
+
+Built by combining the best patterns from:
+
+- [PubChem-MCP-Server](https://github.com/JackKuo666/PubChem-MCP-Server) — PubChem search
+- [rdkit-mcp-server](https://github.com/tandemai-inc/rdkit-mcp-server) — RDKit descriptors & drawing
+- [PubChempy_MCPserver](https://github.com/thinktraveller/PubChempy_MCPserver) — PubChem + chempy
+- [chembl_webresource_client](https://github.com/chembl/chembl_webresource_client) — ChEMBL API reference
+- [uniprot](https://github.com/boscoh/uniprot) — UniProt API reference
+- [KEGGRESTpy](https://github.com/guokai8/KEGGRESTpy) — KEGG API reference
 
 ## License
 
